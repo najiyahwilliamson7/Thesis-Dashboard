@@ -1,4 +1,4 @@
-# Environmental Exposure and Neurodevelopment Dashboard
+# Prenatal Pesticide Exposure and Childhood Brain Development Dashboard
 
 ## Overview
 This interactive Flexdashboard explores associations between prenatal pesticide exposure and neurodevelopmental outcomes in children. It integrates multiple statistical approaches including linear regression and Weighted Quantile Sum (WQS) regression to assess both individual chemical effects and mixture effects.
@@ -9,9 +9,8 @@ This project investigates whether prenatal exposure to pesticide metabolites is 
 ## Data Sources
 The dataset is derived from a longitudinal birth cohort study. Maternal urine samples were analyzed for pesticide metabolites using laboratory-based mass spectrometry methods. Neuroimaging data were collected using MRI in early childhood.
 
-- Sample size: N = [insert N]
+- Sample size: N = 120
 - Study population: Mother–child pairs
-- Collection period: [insert years]
 - Data collection method: Clinical visits, biospecimen analysis, and neuroimaging
 
 ## Dashboard Features
@@ -29,11 +28,10 @@ All plots are interactive using Plotly, allowing:
 - Highlighting by statistical significance
 
 ## Files Included
-- `dashboard.Rmd`: Flexdashboard source code
-- `merged_all.csv`: Analysis dataset (not included if confidential)
-- `WQS models`: Pre-fitted model objects
+- `Prenatal-Pesticide-Exposure-and-Childhood-Brain-Development.Rmd`: Flexdashboard source code
+- `Prenatal-Pesticide-Exposure-and-Childhood-Brain-Development.html`: actual dashboard 
 - `README.md`: Project documentation
 
 ## How to Run
 ```r
-rmarkdown::run("dashboard.Rmd")
+rmarkdown::run("Prenatal-Pesticide-Exposure-and-Childhood-Brain-Development.Rmd")

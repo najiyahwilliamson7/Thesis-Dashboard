@@ -16,7 +16,7 @@ The dataset is derived from a longitudinal birth cohort study. Maternal urine sa
 ## Dashboard
 
 View the dashboard here:  
-[Prenatal Pesticide Exposure Dashboard](Prenatal-Pesticide-Exposure-and-Childhood-Brain-Development.html)
+[Prenatal Pesticide Exposure Dashboard](https://najiyahwilliamson7.github.io/Thesis-Dashboard/)
 
 ## Dashboard Features
 - Interactive forest plots with hover tooltips showing effect estimates and confidence intervals

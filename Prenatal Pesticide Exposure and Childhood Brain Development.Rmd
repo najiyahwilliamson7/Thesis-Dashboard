@@ -1,0 +1,686 @@
+---
+title: "Prenatal Pesticide Exposure and Brain Development"
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(readr)
+library(patchwork)
+library(gWQS)
+library(here)
+library(tibble)
+library(tidytext)
+library(htmltools)
+library(janitor)
+library(readxl)
+
+merged_all <- read.csv(here::here("reports/merged_all.csv"))
+
+# data preprocessing
+df.complete <- merged_all[, c(
+  "maternal_age_birth", "ethnicity", "sessumscore", "maternal_BMI_anc", "ICV.y",
+  "log_DEP", "log_DETP", "log_DMP", "log_DMTP", "log_CINA6", "log_D24",
+  "log_PBA", "log_PNP", "log_TCP", "log_TDCCA",
+  "LeftHemisphereThickness", "RightHemisphereThickness", "MeanThickness",
+  "LeftHemisphereArea", "RightHemisphereArea", "TotalArea"
+)]
+
+df.complete <- df.complete[complete.cases(df.complete), ]
+nrow(df.complete)
+
+#naming
+Exposure.Names <- c(
+  "log_DEP", "log_DETP", "log_DMP", "log_DMTP", "log_CINA6",
+  "log_D24", "log_PBA", "log_PNP", "log_TCP", "log_TDCCA"
+)
+
+# remove 'log_' prefix from pesticide names for output
+df.complete <- df.complete %>%
+  rename_with(~ stringr::str_remove(.x, "^log_"), all_of(Exposure.Names))
+
+# update exposure names to match renamed columns
+Exposure.Names <- stringr::str_remove(Exposure.Names, "^log_")
+
+results <- read_csv(here::here("reports", "LR_models_summary_edited.csv"))
+
+# New labels for publication
+new_labels <- c(
+  "log_DEP" = "DEP", 
+  "log_DETP" = "DETP", 
+  "log_DMP" = "DMP", 
+  "log_DMTP" = "DMTP", 
+  "log_PNP" = "PNP",
+  "log_PBA" = "PBA", 
+  "log_TDCCA" = "TDCCA",
+  "log_CINA6" = "CINA6", 
+  "log_TCP" = "TCP",
+  "log_D24" = "D24"
+)
+
+# Fixing title labels
+mri_labels <- c(
+  "LeftHemisphereThickness" = "Left Hemisphere Thickness",
+  "LeftHemisphereArea" = "Left Hemisphere Area",
+  "RightHemisphereThickness" = "Right Hemisphere Thickness",
+  "RightHemisphereArea" = "Right Hemisphere Area",
+  "MeanThickness" = "Mean Thickness",
+  "TotalArea" = "Total Area"
+)
+
+# ordering the outcomes
+mri_vars <- names(mri_labels)
+
+# Create a clean plotting dataset with significance labels and ordered factors
+results_plot <- results %>%
+  mutate(
+    sig = ifelse(p.value < 0.05, "Significant", "Not significant"),  # label significance
+    pesticide = factor(pesticide, levels = names(new_labels)),      # consistent pesticide order
+    outcome = factor(outcome, levels = mri_vars)                     # consistent outcome order
+  )
+
+
+# Define thickness and area outcomes
+thickness_outcomes <- c(
+  "LeftHemisphereThickness",
+  "RightHemisphereThickness",
+  "MeanThickness"
+)
+
+area_outcomes <- c(
+  "LeftHemisphereArea",
+  "RightHemisphereArea",
+  "TotalArea"
+)
+
+# ---------------------------
+# THICKNESS PLOT
+# ---------------------------
+thick_data <- results_plot %>%
+  filter(outcome %in% thickness_outcomes)
+
+xlim_thick <- range(c(thick_data$conf.low, thick_data$conf.high), na.rm = TRUE)
+
+p_thick2 <- ggplot(thick_data, aes(
+  x = estimate, 
+  y = pesticide, 
+  color = sig,
+  text = paste0(
+    "Pesticide: ", as.character(pesticide),
+    "<br>Effect Estimate (β): ", round(estimate, 2),
+    "<br>95% CI: [", round(conf.low, 2), ", ", round(conf.high, 2), "]",
+    "<br>p-value: ", signif(p.value, 2)
+  )
+)) +
+  geom_point(size = 3) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray40") +
+  scale_color_manual(values = c("Significant" = "red", "Not significant" = "steelblue")) +
+  scale_y_discrete(limits = rev(names(new_labels)), labels = new_labels) +
+  facet_wrap(~ outcome, ncol = 1, labeller = labeller(outcome = mri_labels)) +
+  coord_cartesian(xlim = xlim_thick) +
+  labs(
+    x = "β Estimate and 95% CI",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(size = 12),
+    axis.text.y = element_text(size = 11),
+    axis.text.x = element_text(size = 10),
+    panel.spacing = unit(2, "lines")
+  )+ theme(
+    axis.text.y = element_text(size = 8),
+    plot.margin = margin(5, 5, 5, 5)
+  )
+
+
+# ---------------------------
+# AREA PLOT
+# ---------------------------
+area_data <- results_plot %>%
+  filter(outcome %in% area_outcomes)
+
+xlim_area <- range(c(area_data$conf.low, area_data$conf.high), na.rm = TRUE)
+
+p_area2 <- ggplot(area_data, aes(
+  x = estimate, 
+  y = pesticide, 
+  color = sig,
+  text = paste0(
+    "Pesticide: ", as.character(pesticide),
+    "<br>Effect Estimate (β): ", round(estimate, 2),
+    "<br>95% CI: [", round(conf.low, 2), ", ", round(conf.high, 2), "]",
+    "<br>p-value: ", signif(p.value, 2)
+  )
+)) +
+  geom_point(size = 3) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray40") +
+  scale_color_manual(values = c("Significant" = "red", "Not significant" = "steelblue")) +
+  scale_y_discrete(limits = rev(names(new_labels)), labels = new_labels) +
+  facet_wrap(~ outcome, ncol = 1, labeller = labeller(outcome = mri_labels)) +
+  coord_cartesian(xlim = xlim_area) +
+  labs(
+    x = "β Estimate and 95% CI",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(size = 12),
+    axis.text.y = element_text(size = 11),
+    axis.text.x = element_text(size = 10),
+    panel.spacing = unit(2, "lines")
+  )+ theme(
+    axis.text.y = element_text(size = 8),
+    plot.margin = margin(5, 5, 5, 5)
+  )
+
+
+
+#--------------------------------------
+#WQS
+#--------------------------------------
+#loading in the wqs files
+WQS.LHemThick <- readRDS(here::here("reports", "WQS_LHemThick.rds"))
+WQS.RHemThick <- readRDS(here::here("reports", "WQS_RHemThick.rds"))
+WQS.MeanThick <- readRDS(here::here("reports", "WQS_MeanThick.rds"))
+
+WQS.LHemArea <- readRDS(here::here("reports", "WQS_LHemArea.rds"))
+WQS.RHemArea <- readRDS(here::here("reports", "WQS_RHemArea.rds"))
+WQS.TotalArea <- readRDS(here::here("reports", "WQS_TotalArea.rds"))
+
+
+
+#function for wqs plots
+plot_wqs_weights <- function(wqs_obj, model_name, exposures) {
+  
+  threshold <- 1 / length(exposures)
+  
+  weights_df <- wqs_obj$final_weights %>%
+    rownames_to_column("pesticide") %>%
+    select(pesticide, where(is.numeric)) %>%   # keep only numeric columns
+    pivot_longer(
+      cols = -pesticide,
+      names_to = "model",
+      values_to = "weight"
+    ) %>%
+    mutate(
+      model = model_name,
+      color_group = ifelse(weight >= threshold, "Above", "Below")
+    )
+  
+  weights_df
+}
+
+wqs_all <- bind_rows(
+  plot_wqs_weights(WQS.LHemThick, "Left Hemisphere Thickness", Exposure.Names),
+  plot_wqs_weights(WQS.RHemThick, "Right Hemisphere Thickness", Exposure.Names),
+  plot_wqs_weights(WQS.MeanThick, "Mean Thickness", Exposure.Names),
+  plot_wqs_weights(WQS.LHemArea, "Left Hemisphere Area", Exposure.Names),
+  plot_wqs_weights(WQS.RHemArea, "Right Hemisphere Area", Exposure.Names),
+  plot_wqs_weights(WQS.TotalArea, "Total Area", Exposure.Names)
+)
+
+wqs_all <- wqs_all %>%
+  mutate(model = factor(model,
+                        levels = c(
+                          "Left Hemisphere Thickness",  "Left Hemisphere Area",
+                          "Right Hemisphere Thickness", "Right Hemisphere Area",
+                          "Mean Thickness",
+                          "Total Area"
+                        )))
+
+wqs_plot <- wqs_all %>%
+  group_by(model, pesticide) %>%
+  summarise(weight = mean(weight, na.rm = TRUE), .groups = "drop") %>%
+  group_by(model) %>%
+  mutate(pest_re = reorder_within(pesticide, weight, model)) %>%
+  ungroup()
+
+classes <- tibble(
+  pesticide = c("DEP","DETP","DMP","DMTP","CINA6","D24","PBA","PNP","TCP","TDCCA"),
+  class = c("Organophosphates","Organophosphates","Organophosphates","Organophosphates",
+            "Neonicotinoid","Organochlorines","Pyrethroids","Organophosphates",
+            "Organochlorines","Pyrethroids")
+)
+
+wqs_plot <- wqs_plot %>%
+  left_join(classes, by = "pesticide")
+
+class_colors <- c(
+ "Organophosphates" = "#4f8f82",   # brighter teal
+  "Pyrethroids"      = "#2f74ff",   # brighter blue
+  "Neonicotinoid"    = "#f5b800",   # brighter gold-yellow
+  "Organochlorines"  = "#c4558a"    # brighter rose-pink
+)
+
+p_wqs <- ggplot(wqs_plot, aes(
+  x = pest_re,
+  y = weight,
+  fill = class,
+   text = paste0(
+    "<b>Pesticide:</b> ", pesticide,
+    "<br><b>Class:</b> ", class,
+    "<br><b>Weight:</b> ", round(weight, 2),
+    "<br><b>Model:</b> ", model
+  )
+)) +
+  geom_bar(stat = "identity") +
+  geom_hline(
+    yintercept = 1 / length(Exposure.Names),
+    linetype = "dashed",
+    color = "red"
+  ) +
+  coord_flip() +
+  facet_wrap(~ model, ncol = 2, scales = "free_y") +
+  scale_x_reordered() +
+  scale_fill_manual(values = class_colors) +
+  theme_minimal(base_size = 13) +
+  labs(x = NULL, y = "Weight") +
+  theme(legend.position = "bottom")  # optional: show class legend
+
+# your recoding (keep exactly as you wrote)
+factored <- merged_all %>%
+  mutate(
+    ethnicity = factor(ethnicity, levels = c(1, 3),
+                       labels = c("Black African", "Mixed Ancestry")),
+    sex = factor(sex, levels = c(1, 2),
+                 labels = c("Female", "Male")),
+    maternal_hiv = factor(maternal_hiv, levels = c(0, 1),
+                          labels = c("HIV-negative", "HIV-positive")),
+    smokecat_anc = factor(smokecat_anc, levels = c(0, 1, 2),
+                          labels = c("Non-smoker", "Passive smoker", "Active smoker")),
+    education2v = factor(education2v, levels = c(0, 1),
+                         labels = c("Lower than secondary",
+                                    "At least secondary or higher")),
+    household_income = factor(household_income, levels = c(0, 1, 2),
+                              labels = c("<R1000/m", "R1000–5000/m", ">R5000/m")),
+    parent_work = factor(parent_work, levels = c(0, 1),
+                         labels = c("Not working", "Working"))
+  )
+```
+
+```{r, echo=FALSE, results='asis'}
+htmltools::tags$style(HTML("
+.big-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 15px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  
+  display: flex;                /* flex layout */
+  justify-content: center;      /* center horizontally */
+  align-items: center;          /* center vertically */
+  flex-direction: column;       /* stack number above label */
+}
+.big-number {
+  font-size: 24px;
+  font-weight: bold;
+}
+.big-label {
+  font-size: 15px;
+  color: #555;
+}
+
+"))
+
+
+
+
+```
+
+# Descriptive 
+
+Column {width=650px}
+-------------------------------------
+
+```{r, echo=FALSE}
+df <- factored
+
+n <- nrow(df)
+ethnicity_major <- names(sort(table(df$ethnicity), decreasing=TRUE))[1]
+pct_male <- round(mean(df$sex == "Male", na.rm = TRUE)*100)
+bw <- round(mean(df$birth_weight, na.rm = TRUE), 0)
+#bmi <- round(mean(df$maternal_BMI_anc, na.rm = TRUE), 1)
+#hiv <- round(mean(df$maternal_hiv == "HIV-positive", na.rm = TRUE)*100)
+
+HTML(paste0(
+  "<div style='display:flex; gap:15px; width:100%; flex-wrap:wrap;'>",
+  
+  "<div class='big-card'><div class='big-number'>", n, "</div><div class='big-label'>Sample Size</div></div>",
+  
+  "<div class='big-card'><div class='big-number'>", pct_male, "%</div><div class='big-label'>Male</div></div>",
+  
+  "<div class='big-card'><div class='big-number'>", bw, "</div><div class='big-label'>Birth Weight (g)</div></div>",
+  
+  "<div class='big-card'><div class='big-number'>", ethnicity_major, "</div><div class='big-label'>Major Ethnicity</div></div>",
+  
+  "</div>"
+))
+```
+
+```{r, echo=FALSE}
+htmltools::tags$style(HTML("
+/* Make cards responsive */
+@media (max-width: 600px) {
+  .big-card {
+    width: 100% !important;
+    margin: 6px 0 !important;
+    padding: 15px !important;
+  }
+  .big-number {
+    font-size: 20px !important;
+  }
+  .big-label {
+    font-size: 13px !important;
+  }
+}
+
+/* Make plotly widgets scale */
+.plotly html-widget {
+  width: 100% !important;
+  height: auto !important;
+}
+
+/* Reduce padding + text sizes on mobile */
+@media (max-width: 600px) {
+  body {
+    padding: 5px !important;
+  }
+  .section.level3 h3 {
+    font-size: 16px !important;
+  }
+  .navbar {
+    font-size: 14px !important;
+  }
+}
+"))
+```
+
+```{r, fig.width=9, fig.height=5.5}
+# -------------------------
+# Pesticides
+# -------------------------
+merged_all <- read.csv(here("reports/merged_all.csv"))
+
+lod <- read_excel(here("../02_data/pesticides_LOD.xlsx")) %>% 
+  clean_names()
+
+# -------------------------
+# DEFINE VARIABLES
+# -------------------------
+pesticide_vars <- c("DEP","DETP","DMP","DMTP","CINA6","D24","PBA","PNP","TCP","TDCCA")
+
+pesticide_raw <- merged_all %>% 
+  dplyr::select(all_of(pesticide_vars))
+
+# -------------------------
+# METADATA
+# -------------------------
+classes <- tibble(
+  metabolite = pesticide_vars,
+  class = c("Organophosphates","Organophosphates","Organophosphates","Organophosphates",
+            "Neonicotinoid","Organochlorines","Pyrethroids","Organophosphates",
+            "Organochlorines","Pyrethroids")
+)
+
+pesticide_names <- tibble(
+  metabolite = pesticide_vars,
+  name = c("diethyl phosphate (DEP)", "diethyl thiophosphate (DETP)", 
+           "dimethyl phosphate (DMP)", "dimethyl thiophosphate (DMTP)",
+           "6-nicotinic acid (CINA-6)", "2,4-dichlorophenol (D24)",
+           "3-phenoxybenzoic acid (PBA)", "p-nitrophenol (PNP)",
+           "2,4,5-trichlorophenol (TCP)", "trans-DCCA (TDCCA)")
+)
+
+# -------------------------
+# LONG FORMAT + JOIN
+# -------------------------
+pesticide_long <- pesticide_raw %>%
+  pivot_longer(cols = everything(), names_to = "metabolite", values_to = "value") %>%
+  left_join(lod, by = "metabolite") %>%
+  left_join(classes, by = "metabolite") %>%
+  left_join(pesticide_names, by = "metabolite")
+
+# Order classes
+class_order <- c("Organophosphates", "Pyrethroids", "Neonicotinoid", "Organochlorines")
+
+pesticide_long <- pesticide_long %>%
+  mutate(class = factor(class, levels = class_order))
+
+# -------------------------
+# SUMMARY: GEOMETRIC MEAN
+# -------------------------
+pesticide_plot <- pesticide_long %>%
+  group_by(class, name) %>%
+  summarise(
+    GM = exp(mean(log(ifelse(value < lod, lod / sqrt(2), value)), na.rm = TRUE)),
+    .groups = "drop"
+  )
+
+# -------------------------
+# PLOT
+# -------------------------
+p_pesticide <- ggplot(pesticide_plot, aes(x = reorder(name, GM), y = GM, fill = class,
+    text = paste0(
+      "<br><b>Geometric Mean:</b> ", round(GM, 3)
+    )
+)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  facet_wrap(~ class, ncol = 2, scales = "free_y") +
+  theme_minimal(base_size = 11) +
+  labs(
+    x = NULL,
+    y = "Geometric Mean Concentration"
+  ) +
+  theme(
+    strip.text = element_text(face = "bold"),
+    axis.text.y = element_text(size = 8)
+  ) +
+  scale_fill_manual(values = c(
+    "Organophosphates" = "#4f8f82",   # brighter teal
+  "Pyrethroids"      = "#2f74ff",   # brighter blue
+  "Neonicotinoid"    = "#f5b800",   # brighter gold-yellow
+  "Organochlorines"  = "#c4558a"    # brighter rose-pink
+
+  ))+ theme(
+    plot.margin = margin(5, 20, 5, 5),  # adds right padding
+    axis.text.y = element_text(size = 7)
+  )
+
+ggplotly(p_pesticide, tooltip = "text") %>% layout(showlegend = FALSE)
+
+```
+
+
+
+
+Column {.col-sm-12 .col-md-6}
+-------------------------------------
+
+```{r, fig.height=4}
+thickness_vars <- c(
+  "MeanFrontalThickness", "MeanTemporalThickness", "MeanOccipitalThickness",
+  "MeanParietalThickness", "MeanCingulateThickness", "MeanInsulaThickness"#,
+  # "LeftHemisphereThickness", "RightHemisphereThickness", "MeanThickness"
+)
+
+p_thickness <- factored %>%
+  summarise(across(all_of(thickness_vars), mean, na.rm = TRUE)) %>%
+  pivot_longer(everything(), names_to = "Region", values_to = "Thickness") %>%
+  ggplot(aes(x = reorder(Region, Thickness), y = Thickness,
+         text = paste0(
+      "<b>Region:</b> ", Region,
+      "<br><b>Mean Thickness:</b> ", round(Thickness, 3), " mm"
+    )
+)) +
+  geom_col(fill = "#e6c34a") +
+  theme_minimal() +
+  labs(x = "Region", y = "Cortical Thickness (mm)") +  # vertical bars, show y-axis
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 7),  # rotated x labels
+    axis.text.y = element_text(size = 7),
+    axis.title.x = element_text(size = 9, face = "bold"),
+    axis.title.y = element_text(size = 9, face = "bold")
+  )
+```
+
+```{r, fig.height=4}
+area_vars <- c(
+  "TotalFrontalArea", "TotalTemporalArea", "TotalOccipitalArea",
+  "TotalParietalArea", "TotalCingulateArea", "TotalInsulaArea"#,
+  # "LeftHemisphereArea", "RightHemisphereArea", "TotalArea"
+)
+
+p_area <- factored %>%
+  summarise(across(all_of(area_vars), mean, na.rm = TRUE)) %>%
+  pivot_longer(everything(), names_to = "Region", values_to = "Area") %>%
+  ggplot(aes(x = reorder(Region, Area), y = Area, ,
+    text = paste0(
+      "<b>Region:</b> ", Region,
+      "<br><b>Mean Surface Area:</b> ", round(Area, 1), " mm²"
+    )
+)) +
+  geom_col(fill = "steelblue") +
+  theme_minimal() +
+  labs(x = "Region", y = "Cortical Surface Area (mm^2)") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 7),
+    axis.text.y = element_text(size = 7),
+    axis.title.x = element_text(size = 9, face = "bold"),
+    axis.title.y = element_text(size = 9, face = "bold")
+  )
+```
+
+
+<!-- ```{r, fig.height=5.5} -->
+<!-- p_thickness + p_area + plot_layout(ncol=1) -->
+<!-- ``` -->
+
+```{r, fig.width=7, fig.height=3.2}
+ggplotly(p_thickness, tooltip = "text")
+  
+```
+
+```{r, fig.width=7, fig.height=3.2}
+ggplotly(p_area, tooltip = "text")
+```
+
+
+
+<!-- ### Smoking Status -->
+
+<!-- ```{r, fig.height=4} -->
+<!-- factored %>% -->
+<!--   count(smokecat_anc) %>% -->
+<!--   mutate(p = n / sum(n) * 100) %>% -->
+<!--   ggplot(aes(smokecat_anc, p, fill = smokecat_anc)) + -->
+<!--   geom_col() + -->
+<!--   theme_minimal(base_size = 12) + -->
+<!--   theme(legend.position = "none", -->
+<!--         axis.text.x = element_text(angle = 30, hjust = 1)) + -->
+<!--   labs(x = NULL, y = "Percent") -->
+<!-- ``` -->
+
+<!-- ### Mother's Education -->
+
+<!-- ```{r} -->
+<!-- factored %>% -->
+<!--   count(education2v) %>% -->
+<!--   mutate(p = n / sum(n) * 100) %>% -->
+<!--   ggplot(aes(education2v, p, fill = education2v)) + -->
+<!--   geom_col() + -->
+<!--   theme_minimal(base_size = 12) + -->
+<!--   theme(legend.position = "none", -->
+<!--         axis.text.x = element_text(angle = 30, hjust = 1)) + -->
+<!--   labs(x = NULL, y = "Percent") -->
+<!-- ``` -->
+
+<!-- ### Household Income -->
+
+<!-- ```{r} -->
+<!-- factored %>% -->
+<!--   count(household_income) %>% -->
+<!--   mutate(p = n / sum(n) * 100) %>% -->
+<!--   ggplot(aes(household_income, p, fill = household_income)) + -->
+<!--   geom_col() + -->
+<!--   theme_minimal(base_size = 12) + -->
+<!--   theme(legend.position = "none", -->
+<!--         axis.text.x = element_text(angle = 30, hjust = 1)) + -->
+<!--   labs(x = NULL, y = "Percent") -->
+<!-- ``` -->
+
+
+
+
+# Forest Plots
+
+Column {.col-sm-12 .col-md-6}
+-----------------------------------------------------------------------
+
+<div style="
+  background-color:#f7f7f7;
+  border-left:4px solid #4f8f82;
+  padding:12px 18px;
+  margin-bottom:15px;
+  font-size:14px;
+">
+<b>Linear Regression Models</b><br>
+• β estimates adjusted for maternal age, ethnicity, SES, BMI, and ICV<br>
+• Red = statistically significant (p < 0.05)<br>
+• Points show effect estimates; bars show 95% CI
+</div>
+
+
+```{r, fig.height=10}
+
+ggplotly(p_thick2, tooltip = "text") %>%
+  layout(dragmode = "zoom")
+
+```
+
+Column {.col-sm-12 .col-md-6}
+-----------------------------------------------------------------------
+
+```{r, fig.height=10}
+ggplotly(p_area2, tooltip = "text")
+```
+
+
+
+
+# Weighted Quantile Sum Regression
+
+Column {data-width=1000}
+-----------------------------------------------------------------------
+```{r, fig.height=8,  fig.width=16, out.width="100%"}
+div(
+  style = "
+    background-color:#f7f7f7;
+    border-left:4px solid #4f8f82;
+    padding:12px 18px;
+    margin-bottom:15px;
+    font-size:14px;
+  ",
+  HTML("
+    <b>Weighted Quantile Sum (WQS) Regression</b><br>
+    • Mixture index constructed using 4 quantiles<br>
+    • Weights represent each pesticide’s contribution to the overall mixture effect<br>
+    • Red dashed line indicates the expected weight under the null (1/k)<br>
+    • Bars are colored by chemical class for interpretability
+  ")
+)
+
+ggplotly(p_wqs, tooltip = "text")
+```

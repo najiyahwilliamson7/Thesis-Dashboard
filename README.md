@@ -13,6 +13,11 @@ The dataset is derived from a longitudinal birth cohort study. Maternal urine sa
 - Study population: Mother–child pairs
 - Data collection method: Clinical visits, biospecimen analysis, and neuroimaging
 
+## Dashboard
+
+View the dashboard here:  
+[Prenatal Pesticide Exposure Dashboard](Prenatal-Pesticide-Exposure-and-Childhood-Brain-Development.html)
+
 ## Dashboard Features
 - Interactive forest plots with hover tooltips showing effect estimates and confidence intervals
 - Exposure distribution plots by pesticide class

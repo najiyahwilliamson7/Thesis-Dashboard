@@ -3,8 +3,8 @@
 ## Overview
 This interactive Flexdashboard explores associations between prenatal pesticide exposure and neurodevelopmental outcomes in children. It integrates multiple statistical approaches including linear regression and Weighted Quantile Sum (WQS) regression to assess both individual chemical effects and mixture effects.
 
-## Research Focus
-This project investigates whether prenatal exposure to pesticide metabolites is associated with differences in cortical brain structure, including cortical thickness and surface area.
+## Research Focus and Importance
+This project investigates whether prenatal exposure to pesticide metabolites is associated with differences in cortical brain structure, including cortical thickness and surface area.Prenatal exposure to pesticides may influence early brain development, with potential long-term impacts on cognitive and neurological health. This dashboard provides an accessible way to explore these associations, supporting research and public health efforts aimed at reducing harmful environmental exposures during critical developmental periods.
 
 ## Data Sources
 The dataset is derived from a longitudinal birth cohort study. Maternal urine samples were analyzed for pesticide metabolites using laboratory-based mass spectrometry methods. Neuroimaging data were collected using MRI in early childhood.

@@ -355,18 +355,27 @@ bw <- round(mean(df$birth_weight, na.rm = TRUE), 0)
 #hiv <- round(mean(df$maternal_hiv == "HIV-positive", na.rm = TRUE)*100)
 
 HTML(paste0(
-  "<div style='display:flex; gap:15px; width:100%; flex-wrap:wrap;'>",
-  
-  "<div class='big-card'><div class='big-number'>", n, "</div><div class='big-label'>Sample Size</div></div>",
-  
-  "<div class='big-card'><div class='big-number'>", pct_male, "%</div><div class='big-label'>Male</div></div>",
-  
-  "<div class='big-card'><div class='big-number'>", bw, "</div><div class='big-label'>Birth Weight (g)</div></div>",
-  
-  "<div class='big-card'><div class='big-number'>", ethnicity_major, "</div><div class='big-label'>Major Ethnicity</div></div>",
-  
+  "<div style='display:flex; width:100%; gap:20px; align-items:flex-start;'>",
+
+    
+    "<div style='min-width:180px; max-width:200px;'>",
+      "<a href='https://github.com/najiyahwilliamson7/Thesis-Dashboard' target='_blank' ",
+      "style='font-size:14px; text-decoration:none; color:#4f8f82; font-weight:bold;'>",
+      "🔗 GitHub Repository</a>",
+    "</div>",
+
+    "<div style='display:flex; gap:15px; flex-wrap:wrap; width:100%;'>",
+
+      "<div class='big-card'><div class='big-number'>", n, "</div><div class='big-label'>Sample Size</div></div>",
+      "<div class='big-card'><div class='big-number'>", pct_male, "%</div><div class='big-label'>Male</div></div>",
+      "<div class='big-card'><div class='big-number'>", bw, "</div><div class='big-label'>Birth Weight (g)</div></div>",
+      "<div class='big-card'><div class='big-number'>", ethnicity_major, "</div><div class='big-label'>Major Ethnicity</div></div>",
+
+    "</div>",
+
   "</div>"
 ))
+
 ```
 
 ```{r, echo=FALSE}
@@ -407,7 +416,7 @@ htmltools::tags$style(HTML("
 "))
 ```
 
-```{r, fig.width=9, fig.height=5.5}
+```{r, fig.width=8, fig.height=3.7}
 # -------------------------
 # Pesticides
 # -------------------------
@@ -502,14 +511,38 @@ p_pesticide <- ggplot(pesticide_plot, aes(x = reorder(name, GM), y = GM, fill = 
 ggplotly(p_pesticide, tooltip = "text") %>% layout(showlegend = FALSE)
 
 ```
-
+```{r, echo=FALSE}
+div(
+  style = "
+    clear: both;
+    width:100%;
+    margin-top:20px;
+  ",
+  div(
+    style = "
+      max-width:900px;
+      margin-left:auto;
+      margin-right:auto;
+      background-color:#f7f7f7;
+      border-left:4px solid #4f8f82;
+      padding:14px 18px;
+      font-size:clamp(13px, 1.1vw, 15px);
+      line-height:1.5;
+    ",
+    HTML("
+      <b>Why This Matters</b><br><br>
+      Prenatal exposure to pesticides may influence early brain development, with potential long-term impacts on cognitive and neurological health. This dashboard provides an accessible way to explore these associations, supporting research and public health efforts aimed at reducing harmful environmental exposures during critical developmental periods.
+    ")
+  )
+)
+```
 
 
 
 Column {.col-sm-12 .col-md-6}
 -------------------------------------
 
-```{r, fig.height=4}
+```{r, fig.width=6.3, fig.height=2.3}
 thickness_vars <- c(
   "MeanFrontalThickness", "MeanTemporalThickness", "MeanOccipitalThickness",
   "MeanParietalThickness", "MeanCingulateThickness", "MeanInsulaThickness"#,
@@ -536,7 +569,7 @@ p_thickness <- factored %>%
   )
 ```
 
-```{r, fig.height=4}
+```{r, fig.width=7.3, fig.height=2.3}
 area_vars <- c(
   "TotalFrontalArea", "TotalTemporalArea", "TotalOccipitalArea",
   "TotalParietalArea", "TotalCingulateArea", "TotalInsulaArea"#,
@@ -568,12 +601,12 @@ p_area <- factored %>%
 <!-- p_thickness + p_area + plot_layout(ncol=1) -->
 <!-- ``` -->
 
-```{r, fig.width=7, fig.height=3.2}
+```{r, fig.width=7.3, fig.height=3.2}
 ggplotly(p_thickness, tooltip = "text")
   
 ```
 
-```{r, fig.width=7, fig.height=3.2}
+```{r, fig.width=7.3, fig.height=3.2}
 ggplotly(p_area, tooltip = "text")
 ```
 
@@ -626,15 +659,19 @@ ggplotly(p_area, tooltip = "text")
 
 # Forest Plots
 
-Column {.col-sm-12 .col-md-6}
+Row
 -----------------------------------------------------------------------
 
+Column {data-width=1000}
+-----------------------------------------------------------------------
 <div style="
   background-color:#f7f7f7;
   border-left:4px solid #4f8f82;
   padding:12px 18px;
   margin-bottom:15px;
-  font-size:14px;
+  font-size:clamp(13px, 1.2vw, 16px);
+  line-height:1.5;
+  max-width:1400px;
 ">
 <b>Linear Regression Models</b><br>
 • β estimates adjusted for maternal age, ethnicity, SES, BMI, and ICV<br>
@@ -642,18 +679,22 @@ Column {.col-sm-12 .col-md-6}
 • Points show effect estimates; bars show 95% CI
 </div>
 
+Row
+-----------------------------------------------------------------------
 
-```{r, fig.height=10}
+Column {data-width=1/2}
+-----------------------------------------------------------------------
+
+```{r, fig.height=6.5}
 
 ggplotly(p_thick2, tooltip = "text") %>%
   layout(dragmode = "zoom")
 
 ```
-
-Column {.col-sm-12 .col-md-6}
+Column {data-width=1/2}
 -----------------------------------------------------------------------
 
-```{r, fig.height=10}
+```{r, fig.height=6.5}
 ggplotly(p_area2, tooltip = "text")
 ```
 
@@ -662,9 +703,12 @@ ggplotly(p_area2, tooltip = "text")
 
 # Weighted Quantile Sum Regression
 
+Row
+-----------------------------------------------------------------------
+
 Column {data-width=1000}
 -----------------------------------------------------------------------
-```{r, fig.height=8,  fig.width=16, out.width="100%"}
+```{r, echo=FALSE}
 div(
   style = "
     background-color:#f7f7f7;
@@ -681,6 +725,41 @@ div(
     • Bars are colored by chemical class for interpretability
   ")
 )
+```
 
+Row
+-----------------------------------------------------------------------
+
+Column {data-width=1000}
+-----------------------------------------------------------------------
+```{r, fig.height=6.5, fig.width=8, out.width="100%"}
 ggplotly(p_wqs, tooltip = "text")
 ```
+
+
+# Data Description
+
+Row
+-----------------------------------------------------------------------
+
+Column {data-width=1000}
+-----------------------------------------------------------------------
+
+```{r, echo=FALSE}
+div(
+  style = "
+    max-width:800px;
+    margin-left:auto;
+    margin-right:auto;
+    background-color:#f7f7f7;
+    border-left:4px solid #4f8f82;
+    padding:16px 20px;
+    font-size:clamp(13px, 1.2vw, 16px);
+    line-height:1.6;
+  ",
+  HTML("
+    <b>Dataset Overview</b><br><br>
+    Data are derived from the Drakenstein Child Health Study (DCHS), a longitudinal birth cohort study conducted in South Africa. The analytic sample includes 120 mother–child pairs with complete data on urinary pesticide metabolites and structural magnetic resonance imaging (MRI) measures. Data were collected between 2012 and 2015, with maternal consent obtained at enrollment and reaffirmed annually. Urinary pesticide metabolites were measured from biobanked samples collected during the second trimester (n=104) and at birth (n=16), and structural MRI data were obtained from a neuroimaging sub-study. The study population consists of pregnant individuals and their children participating in the DCHS cohort.This dataset is not publicly available and is used under restricted access.
+  ")
+)
+
